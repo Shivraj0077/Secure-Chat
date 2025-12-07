@@ -1,4 +1,5 @@
 "use client";
+
 import { ensureProfileExists } from "@/lib/createProfile";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
@@ -10,29 +11,32 @@ export default function LoginPage() {
   const [user, setUser] = useState(null);
 
   const signInWithGoogle = async () => {
+    const redirectUrl =
+      typeof window !== "undefined"
+        ? `${window.location.origin}/auth/callback`
+        : undefined;
+
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: 
-          typeof window !== "undefined" && window.location.origin + "/auth/callback",
+        redirectTo: redirectUrl,
       },
     });
+
     if (error) console.log("Login error:", error);
   };
 
   useEffect(() => {
     async function loadUser() {
-    supabase.auth.getUser().then(async ({ data }) => {
-      if(data?.user) {
-        await ensureProfileExists(data.user)
+      const { data } = await supabase.auth.getUser();
+      if (data?.user) {
+        await ensureProfileExists(data.user);
         setUser(data.user);
         router.push("/chat");
       }
-    })
-  }
-  loadUser();
+    }
+    loadUser();
   }, [router]);
-
 
   return (
     <div style={{ padding: 40 }}>
